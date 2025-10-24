@@ -1,0 +1,701 @@
+🧠 What is a Stored Procedure?
+
+A stored procedure (SP) is a block of SQL code saved inside the database that performs a specific task (like insert, update, delete, select).
+Instead of writing the same SQL repeatedly, you store it once and just call it whenever needed.
+
+🧠 What are Parameters?
+
+Parameters let you pass values to or from a stored procedure — just like arguments in a function.
+
+🅰️ 1️⃣ IN Parameters
+🧩 Meaning:
+
+IN parameters are used to send values into a stored procedure.
+
+You cannot modify or return them — they are read-only inside the SP.
+✅ Syntax:
+
+CREATE PROCEDURE procedure_name (IN parameter_name datatype)
+BEGIN
+    -- use the parameter
+END;
+
+💡 Example (Insert Example):
+Let’s say we want to insert an employee record into the Employee table:
+
+CREATE PROCEDURE InsertEmployee(
+    IN empName VARCHAR(50),
+    IN empAge INT,
+    IN empDept VARCHAR(50)
+)
+BEGIN
+    INSERT INTO Employee (empName, empAge, empDept)
+    VALUES (:empName, :empAge, :empDept);
+END;
+
+📞 Calling:
+CALL InsertEmployee('Amulya', 25, 'HR');
+
+💡 Example (Update Example):
+CREATE PROCEDURE UpdateEmployee(
+    IN p_empId INT,
+    IN p_newName VARCHAR(50),
+    IN p_newAge INT,
+    IN p_newDept VARCHAR(50)
+)
+BEGIN
+    UPDATE Employee
+    SET empName = :p_newName,
+        empAge = :p_newAge,
+        empDept = :p_newDept
+    WHERE empId = :p_empId;
+END;
+
+📞 Calling:
+CALL UpdateEmployee(101, 'Amulya Shetty', 26, 'Finance');
+
+💡 Example (GetAll Example):
+
+CREATE PROCEDURE GetAllEmployees()
+BEGIN
+    SELECT empId, empName, empAge, empDept
+    FROM Employee;
+END;
+
+📞 Calling:
+CALL GetAllEmployees();
+
+💡 Example (GetById Example):
+CREATE PROCEDURE GetEmployeeById(
+    IN p_empId INT
+)
+BEGIN
+    SELECT empId, empName, empAge, empDept
+    FROM Employee
+    WHERE empId = :p_empId;
+END;
+
+📞 Calling:
+CALL GetEmployeeById(102);
+
+💡 Example (Delete Example):
+
+CREATE PROCEDURE DeleteEmployee(
+    IN p_empId INT
+)
+BEGIN
+    DELETE FROM Employee
+    WHERE empId = :p_empId;
+END;
+
+📞 Calling:
+CALL DeleteEmployee(102);
+
+🅱️ 2️⃣ OUT Parameters
+
+🧠 What is an OUT Parameter?
+
+An OUT parameter is used to return a value from a stored procedure to the caller.
+
+It does not accept input; its main job is to send information back.
+
+✅ Example: Count Employees Using OUT Parameter
+
+CREATE PROCEDURE GetTotalEmployees(OUT totalCount INT)
+BEGIN
+    -- Count all employees and store in OUT parameter
+    SELECT COUNT(*) INTO totalCount
+    FROM Employee;
+END;
+
+📞 Calling:
+-- Declare a variable to hold the OUT parameter
+DECLARE @total INT;
+
+-- Call the stored procedure
+CALL GetTotalEmployees(@total);
+
+-- Check the value
+SELECT @total;
+
+We’ll use this Employee table:
+
+| empId | empName | empAge | empDept |
+
+💡 Example (Insert Example):
+
+CREATE PROCEDURE InsertEmployee(
+    IN p_empId INT,
+    IN p_empName VARCHAR(50),
+    IN p_empAge INT,
+    IN p_empDept VARCHAR(50),
+    OUT p_message VARCHAR(100)
+)
+BEGIN
+    INSERT INTO Employee(empId, empName, empAge, empDept)
+    VALUES(:p_empId, :p_empName, :p_empAge, :p_empDept);
+
+    SET p_message = 'Employee inserted successfully';
+END;
+📞 Calling:
+DECLARE @msg VARCHAR(100);
+
+CALL InsertEmployee(101, 'Amulya', 25, 'HR', @msg);
+
+SELECT @msg;
+
+✅ Result: "Employee inserted successfully"
+
+
+💡 Example (Update Example):
+CREATE PROCEDURE UpdateEmployee(
+    IN p_empId INT,
+    IN p_newName VARCHAR(50),
+    IN p_newAge INT,
+    IN p_newDept VARCHAR(50),
+    OUT p_message VARCHAR(100)
+)
+BEGIN
+    UPDATE Employee
+    SET empName = :p_newName,
+        empAge = :p_newAge,
+        empDept = :p_newDept
+    WHERE empId = :p_empId;
+
+    IF ROW_COUNT() > 0 THEN
+        SET p_message = 'Employee updated successfully';
+    ELSE
+        SET p_message = 'Employee not found';
+    END IF;
+END;
+
+📞 Calling:
+DECLARE @msg VARCHAR(100);
+
+CALL UpdateEmployee(101, 'Amulya Shetty', 26, 'Finance', @msg);
+
+SELECT @msg;
+
+💡 Example (Delete Example):
+
+CREATE PROCEDURE DeleteEmployee(
+    IN p_empId INT,
+    OUT p_message VARCHAR(100)
+)
+BEGIN
+    DELETE FROM Employee
+    WHERE empId = :p_empId;
+
+    IF ROW_COUNT() > 0 THEN
+        SET p_message = 'Employee deleted successfully';
+    ELSE
+        SET p_message = 'Employee not found';
+    END IF;
+END;
+
+📞 Calling:
+DECLARE @msg VARCHAR(100);
+
+CALL DeleteEmployee(101, @msg);
+
+SELECT @msg;
+
+🅾️ 3️⃣ INOUT Parameters
+
+INOUT parameters can accept input values and return output values
+
+💡 Example (Insert Example):
+
+CREATE PROCEDURE InsertEmployeeINOUT(
+    INOUT p_empId INT,
+    INOUT p_empName VARCHAR(50),
+    INOUT p_empAge INT,
+    INOUT p_empDept VARCHAR(50),
+    INOUT p_salary DECIMAL(10,2),
+    INOUT p_message VARCHAR(100)
+)
+BEGIN
+    INSERT INTO Employee(empId, empName, empAge, empDept, salary)
+    VALUES(:p_empId, :p_empName, :p_empAge, :p_empDept, :p_salary);
+
+    SET p_message = 'Employee inserted successfully';
+END;
+
+📞 Calling:
+DECLARE @msg VARCHAR(100);
+SET @empId = 101;
+SET @empName = 'Amulya';
+SET @empAge = 25;
+SET @empDept = 'HR';
+SET @salary = 50000;
+
+CALL InsertEmployeeINOUT(@empId, @empName, @empAge, @empDept, @salary, @msg);
+SELECT @msg;
+
+💡 Example (Update Example):
+
+CREATE PROCEDURE UpdateEmployeeSalaryINOUT(
+    INOUT p_empId INT,
+    INOUT p_salary DECIMAL(10,2),
+    INOUT p_message VARCHAR(100)
+)
+BEGIN
+    UPDATE Employee
+    SET salary = :p_salary
+    WHERE empId = :p_empId;
+
+    IF ROW_COUNT() > 0 THEN
+        SET p_message = 'Salary updated successfully';
+    ELSE
+        SET p_message = 'Employee not found';
+    END IF;
+END;
+
+📞 Calling:
+-- Declare variables first
+DECLARE @empId INT;
+DECLARE @salary DECIMAL(10,2);
+DECLARE @msg VARCHAR(100);
+
+-- Assign values
+SET @empId = 101;
+SET @salary = 55000;
+
+-- Call the INOUT procedure
+CALL UpdateEmployeeSalaryINOUT(@empId, @salary, @msg);
+
+-- Check the message returned
+SELECT @msg;
+
+
+4️⃣ Control Flow:
+Control flow statements let you control the sequence of execution in stored procedures — like decision-making, loops, and branching.
+
+1️⃣ IF…ELSE:
+
+✅ Syntax:
+
+IF condition THEN
+    -- statements
+ELSEIF another_condition THEN
+    -- statements
+ELSE
+    -- statements
+END IF;
+
+🧠 Example 1
+
+CREATE PROCEDURE CheckAge(IN empAge INT, OUT resultMsg VARCHAR(100))
+BEGIN
+    IF empAge < 18 THEN
+        SET resultMsg = 'Not eligible for employment';
+    ELSEIF empAge BETWEEN 18 AND 60 THEN
+        SET resultMsg = 'Eligible for employment';
+    ELSE
+        SET resultMsg = 'Retirement age reached';
+    END IF;
+END;
+
+📞 Calling:
+
+DECLARE @msg VARCHAR(100);
+CALL CheckAge(65, @msg);
+SELECT @msg;
+
+CREATE PROCEDURE DepartmentInfo(IN dept VARCHAR(20), OUT message VARCHAR(100))
+BEGIN
+    IF dept = 'HR' THEN
+        SET message = 'Handles employee relations and payroll';
+    ELSEIF dept = 'IT' THEN
+        SET message = 'Manages company systems and software';
+    ELSEIF dept = 'SALES' THEN
+        SET message = 'Responsible for revenue and client acquisition';
+    ELSE
+        SET message = 'Department not recognized';
+    END IF;
+END;
+
+📞 Calling:
+DECLARE @msg VARCHAR(100);
+CALL DepartmentInfo('IT', @msg);
+SELECT @msg;
+
+🧠 Example 4 — Real-Time CRUD Validation
+
+CREATE PROCEDURE AddEmployee_IFELSE(
+    IN empId INT,
+    IN empName VARCHAR(50),
+    IN empDept VARCHAR(50),
+    OUT message VARCHAR(100)
+)
+BEGIN
+    DECLARE empCount INT;
+
+    SELECT COUNT(*) INTO empCount
+    FROM Employee
+    WHERE empId = :empId;
+
+    IF empCount > 0 THEN
+        SET message = 'Employee already exists — cannot insert';
+    ELSE
+        INSERT INTO Employee(empId, empName, empDept)
+        VALUES(:empId, :empName, :empDept);
+        SET message = 'Employee inserted successfully';
+    END IF;
+END;
+
+📞 Calling:
+DECLARE @msg VARCHAR(100);
+CALL AddEmployee_IFELSE(101, 'Amulya', 'HR', @msg);
+SELECT @msg;
+🧠 What is a CASE statement?
+A CASE statement lets you perform conditional logic inside your SQL queries or stored procedures.
+✅ 1. Simple CASE Statement
+
+CASE expression
+    WHEN value1 THEN result1
+    WHEN value2 THEN result2
+    ...
+    ELSE default_result
+END
+
+Suppose you have an Employee table:
+You want to give a bonus based on department:
+
+IT → 10% of salary
+
+HR → 8% of salary
+
+Sales → 12% of salary
+
+Others → 5% of salary
+
+SELECT 
+    EmpName,
+    Department,
+    Salary,
+    CASE Department
+        WHEN 'IT' THEN Salary * 0.10
+        WHEN 'HR' THEN Salary * 0.08
+        WHEN 'Sales' THEN Salary * 0.12
+        ELSE Salary * 0.05
+    END AS Bonus
+FROM Employee;
+
+
+✅ 2. Searched CASE Statement:
+CASE
+    WHEN condition1 THEN result1
+    WHEN condition2 THEN result2
+    ...
+    ELSE default_result
+END
+This form allows complex logical conditions (>, <, BETWEEN, LIKE, etc.).
+
+You want to categorize performance as:
+
+≥ 90 → Excellent
+
+70–89 → Good
+
+50–69 → Average
+
+Below 50 → Poor
+
+SELECT 
+    EmpName,
+    PerformanceScore,
+    CASE
+        WHEN PerformanceScore >= 90 THEN 'Excellent'
+        WHEN PerformanceScore BETWEEN 70 AND 89 THEN 'Good'
+        WHEN PerformanceScore BETWEEN 50 AND 69 THEN 'Average'
+        ELSE 'Poor'
+    END AS PerformanceCategory
+FROM EmployeePerformance;
+
+Example Inside a Stored Procedure
+
+CREATE PROCEDURE CalculateSalaryAdjustment()
+BEGIN
+    SELECT 
+        EmpId,
+        EmpName,
+        Department,
+        Salary,
+        Experience,
+
+        -- Salary Hike Calculation (numeric)
+        CASE
+            WHEN Department = 'IT' AND Experience >= 5 THEN Salary * 1.20     -- 20% hike
+            WHEN Department = 'HR' AND Experience >= 3 THEN Salary * 1.10     -- 10% hike
+            WHEN Department = 'Sales' AND Experience >= 7 THEN Salary * 1.25  -- 25% hike
+            WHEN Department = 'Finance' AND Experience >= 8 THEN Salary * 1.30-- 30% hike
+            ELSE Salary * 1.05                                                -- 5% hike for others
+        END AS NewSalary,
+
+        -- Bonus Category (text)
+        CASE
+            WHEN Experience >= 8 THEN 'Platinum Bonus'
+            WHEN Experience BETWEEN 5 AND 7 THEN 'Gold Bonus'
+            WHEN Experience BETWEEN 3 AND 4 THEN 'Silver Bonus'
+            ELSE 'Bronze Bonus'
+        END AS BonusCategory,
+
+        -- Appraisal Comment
+        CASE
+            WHEN Salary >= 70000 THEN 'Top Performer - Leadership Track'
+            WHEN Salary BETWEEN 50000 AND 69999 THEN 'Strong Performer'
+            WHEN Salary BETWEEN 30000 AND 49999 THEN 'Developing Performer'
+            ELSE 'Needs Improvement'
+        END AS AppraisalComment
+
+    FROM Employee;
+END;
+
+calling:
+CALL CalculateSalaryAdjustment();
+
+🔁 1️⃣ What is a WHILE Loop?
+A WHILE loop in SQL Anywhere is used to repeat a block of code as long as a specified condition is true.
+
+🧠 2️⃣ Basic Syntax
+
+WHILE <condition> LOOP
+    -- statements to repeat
+END LOOP;
+
+You can also use:
+
+LEAVE to break out of the loop
+
+CONTINUE to skip to the next iteration
+example:
+CREATE PROCEDURE PrintNumbers()
+BEGIN
+    DECLARE @i INT;
+    SET @i = 1;
+
+    WHILE @i <= 5 LOOP
+        SELECT 'Current number: ' || @i;
+        SET @i = @i + 1;
+    END LOOP;
+END;
+
+example:
+Suppose you want to increase each employee’s salary by ₹1000.
+
+CREATE PROCEDURE IncrementAllSalaries()
+BEGIN
+    DECLARE @empId INT;
+    DECLARE @maxId INT;
+
+    SELECT MIN(EmpId) INTO @empId FROM Employee;
+    SELECT MAX(EmpId) INTO @maxId FROM Employee;
+
+    WHILE @empId <= @maxId LOOP
+        UPDATE Employee
+        SET Salary = Salary + 1000
+        WHERE EmpId = @empId;
+
+        SELECT 'Salary updated for Employee ID: ' || @empId AS Info;
+
+        SET @empId = @empId + 1;
+    END LOOP;
+END;
+
+🌀 1️⃣ REPEAT Loop
+A REPEAT loop executes a block of SQL statements until a condition becomes true.
+It always runs at least once (unlike WHILE, which may not run if the condition is false at the start).
+
+REPEAT
+    -- statements to repeat
+UNTIL <condition>
+END REPEAT;
+
+example:
+CREATE PROCEDURE IncreaseSalaryUntilTarget()
+BEGIN
+    DECLARE @salary DECIMAL(10,2);
+    DECLARE @target DECIMAL(10,2);
+
+    SET @salary = 45000;
+    SET @target = 50000;
+
+    REPEAT
+        SET @salary = @salary + 1000;
+        SELECT 'Increased salary to: ' || @salary AS Info;
+    UNTIL @salary >= @target
+    END REPEAT;
+
+    SELECT 'Final Salary Reached: ' || @salary AS Result;
+END;
+
+
+for nd goto pending
+
+
+
+1️⃣ DECLARE Variables Inside Stored Procedure
+Variables are temporary containers used to store data within a procedure
+In SQL Anywhere, you must declare them before using them (at the top of your BEGIN...END block).
+syntax:
+DECLARE @variable_name data_type;
+
+Let’s create a procedure to calculate an employee’s annual salary.
+CREATE PROCEDURE CalculateAnnualSalary()
+BEGIN
+    DECLARE @monthlySalary DECIMAL(10,2);
+    DECLARE @annualSalary DECIMAL(10,2);
+
+    SET @monthlySalary = 50000;
+    SET @annualSalary = @monthlySalary * 12;
+
+    SELECT 'Annual Salary is: ' || @annualSalary AS Result;
+END;
+
+2️⃣ Local vs Procedure-Level Variables:
+
+Local variables → Declared inside a BEGIN...END block, used only within that block.
+
+Procedure-level variables → Declared at the top level of the procedure (before nested BEGIN...END blocks), accessible throughout the procedure.
+
+CREATE PROCEDURE ExampleLocalVsProcedureLevel()
+BEGIN
+    -- Procedure-level variable
+    DECLARE @baseSalary DECIMAL(10,2);
+    SET @baseSalary = 40000;
+
+    BEGIN
+        -- Local variable (visible only inside this BEGIN...END)
+        DECLARE @bonus DECIMAL(10,2);
+        SET @bonus = 5000;
+
+        SELECT 'Inside block: ' || (@baseSalary + @bonus) AS TotalPay;
+    END;
+
+    -- Trying to use @bonus outside gives an error
+    SELECT 'Outside block: ' || @baseSalary AS SalaryOnly;
+END;
+
+4️⃣ Assigning Values using SET
+The SET statement assigns a value to a variable.
+
+SET @variable_name = expression;
+SET @count = 5; example
+
+You can also assign directly from a query using SELECT ... INTO.
+
+
+SELECT Salary INTO @salary FROM Employee WHERE EmpId = 101;
+
+CREATE PROCEDURE CalculateBonus(@empId INT)
+BEGIN
+    DECLARE @salary DECIMAL(10,2);
+    DECLARE @bonus DECIMAL(10,2);
+
+    SELECT Salary INTO @salary FROM Employee WHERE EmpId = @empId;
+    SET @bonus = @salary * 0.10;
+
+    SELECT 'Employee ID: ' || @empId AS Emp, 'Bonus: ' || @bonus AS BonusAmount;
+END;
+
+✅ Conclusion
+
+SET → good for constants, simple calculations, single variable assignment.
+
+SELECT INTO → good for assigning values from a table, multiple variables, and queries.
+
+
+🔹 1️⃣ BEGIN TRANSACTION / COMMIT / ROLLBACK
+
+Transactions in stored procedures make sure that:
+
+All SQL statements inside the SP succeed together, or
+
+If any one statement fails, all previous changes are rolled back.
+🧩 Syntax
+BEGIN TRANSACTION;
+
+-- your SQL operations here
+
+COMMIT;   -- saves the changes permanently
+-- or
+ROLLBACK; -- undo all changes
+
+
+with stored procedure syntax:
+CREATE PROCEDURE procedure_name()
+BEGIN
+    BEGIN TRANSACTION;
+
+    -- SQL operations (Insert / Update / Delete)
+
+    IF condition THEN
+        COMMIT;  -- everything succeeded, save changes
+    ELSE
+        ROLLBACK; -- something failed, undo changes
+    END IF;
+END;
+
+Let's imagine two customers — A and B.
+We’ll transfer ₹5000 from A → B safely using a stored procedure.
+
+
+CREATE PROCEDURE TransferMoney(
+    IN fromAcc INT,
+    IN toAcc INT,
+    IN amount DECIMAL(10,2)
+)
+BEGIN
+    DECLARE @fromBalance DECIMAL(10,2);
+
+    -- Start the transaction
+    BEGIN TRANSACTION;
+
+    -- Step 1: Check if sender has enough balance
+    SELECT Balance INTO @fromBalance
+    FROM Accounts
+    WHERE AccNo = fromAcc;
+
+    IF @fromBalance >= amount THEN
+        -- Step 2: Deduct from sender
+        UPDATE Accounts
+        SET Balance = Balance - amount
+        WHERE AccNo = fromAcc;
+
+        -- Step 3: Add to receiver
+        UPDATE Accounts
+        SET Balance = Balance + amount
+        WHERE AccNo = toAcc;
+
+        COMMIT;  -- ✅ all successful
+    ELSE
+        ROLLBACK;  -- ❌ not enough balance
+    END IF;
+END;
+
+✅ With transaction → atomic & safe
+❌ Without transaction → partial & risky
+
+🔹 2️⃣ Locking Tables or Rows
+
+When two users access the same data at the same time, locks prevent data corruption.
+
+🔒 Types:
+
+Row-level lock: locks only the row being modified → allows high concurrency.
+
+Table-level lock: locks the entire table → ensures safety but reduces concurrency.
+BEGIN TRANSACTION;
+
+LOCK TABLE Employee IN EXCLUSIVE MODE;
+
+UPDATE Employee SET Salary = Salary + 5000 WHERE Dept = 'IT';
+
+COMMIT;
+🧠 Meaning:
+
+Prevents other users from reading/writing the Employee table until the transaction ends.
+
+Used when you are doing bulk updates/deletes.
+
